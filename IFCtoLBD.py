@@ -308,9 +308,8 @@ def writeInterfaces(model,f):
 
 if __name__ == '__main__':
     folder = r'./Sample/'
-    fname = "smallhouse.ifc"
+    fname = "Case600-0209.ifc"
     ifpath = os.path.abspath(folder+fname)
     ofpath = os.path.abspath(folder+(fname[:-4])+".ttl")
     convertIFCSPFtoTTL(ifpath, ofpath)
-                   
-              
+                                
