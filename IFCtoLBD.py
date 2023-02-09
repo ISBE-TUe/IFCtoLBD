@@ -1,6 +1,8 @@
 from datetime import datetime
 import ifcopenshell as ios
 import Namespace
+import os
+import re 
 
 global baseURI
 inputFile = ""
@@ -94,6 +96,7 @@ def writeLBDinstances(model, f):
     output += writeSpaces(model,f)
     output += writeElements(model,f)
     output += writeInterfaces(model,f)
+    output += writeZones(model,f)
     return output
 
 def writeSites(model,f):
@@ -105,7 +108,7 @@ def writeSites(model,f):
             output += "\trdfs:label \""+s.Name+"\"^^xsd:string ;" + "\n"
         if(s.Description):
             output += "\trdfs:comment \""+s.Description+"\"^^xsd:string ;" + "\n"        
-        output += "\tbot:hasGuid \""+ ios.guid.expand(s.GlobalId) +"\"^^xsd:string ;" + "\n"
+        output += "\tbot:hasGuid \""+ ios.guid.expand(s.GlobalId) +"\"^^xsd:string ;" + "\n" # bot:hasGuid no such property in the bot ontology？
         output += "\tprops:hasCompressedGuid \""+ s.GlobalId +"\"^^xsd:string "
         for reldec in s.IsDecomposedBy:
             if reldec is not None:
@@ -215,6 +218,30 @@ def writeSpaces(model,f):
         output += ". \n\n"
     return output
 
+def writeZones(model,f):
+    output = ""
+    for z in model.by_type("ifcZone"):
+        output += "inst:space_" + str(z.id()) + "\n"
+        output += "\ta bot:Zone ;" + "\n"
+        if(z.Name):
+            output += "\trdfs:label \""+z.Name+"\"^^xsd:string ;" + "\n"
+        if(z.Description):
+            output += "\trdfs:comment \""+z.Description+"\"^^xsd:string ;" + "\n"        
+        output += "\tprops:hasGuid \""+ ios.guid.expand(z.GlobalId) +"\"^^xsd:string ;" + "\n"
+        output += "\tprops:hasCompressedGuid \""+ z.GlobalId +"\"^^xsd:string "
+        for reldec in z.IsDecomposedBy:
+            if reldec is not None:
+                for sp in reldec.RelatedObjects:
+                    output += ";\n"
+                    output += "\tbot:hasSpace inst:space_"+ str(sp.id()) + " "
+        if(includeBuildingProperties):
+            psets = ios.util.element.get_psets(z)
+            for name, properties in psets.items():
+                output = print_properties(properties, output)                             
+                
+        output += ". \n\n"
+    return output 
+
 def writeElements(model,f):
     output = ""
     for b in model.by_type("IfcElement"):                
@@ -279,5 +306,10 @@ def writeInterfaces(model,f):
 
 
 
-
-convertIFCSPFtoTTL("smallhouse.ifc", "smallhouse.ttl")
+if __name__ == '__main__':
+    folder = r'./Sample/'
+    fname = "Case600-0209.ifc"
+    ifpath = os.path.abspath(folder+fname)
+    ofpath = os.path.abspath(folder+(fname[:-4])+".ttl")
+    convertIFCSPFtoTTL(ifpath, ofpath)
+                                
